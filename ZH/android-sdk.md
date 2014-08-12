@@ -1,12 +1,12 @@
 # Cubie SDK for Android
 
-## 開始
+## 如何執行範例程式
 
 ### 建立一個新的 Cubie App
 
 到 [Cubie Developer 管理介面][1] 註冊一個開發帳號，成功後登入後點擊 `Create New App` 創建一個新的 應用程式，名稱為 `Demo`
 
-按 `Details...` 修改應用程式資訊，在 Android 的 App Package 欄位輸入 `com.cubie.sdk.demo`
+按 **Details...** 修改應用程式資訊，在 Android 的 App Package 欄位輸入 `com.cubie.sdk.demo`
 
 App Signatures 的產生方式如下
 
@@ -40,216 +40,220 @@ keytool -exportcert -alias androiddebugkey -keystore /Users/developer/.android/d
 
 ![Eclipse File Import Android][4]
 
-瀏覽到 cubie-openapi 目錄，下方的 Projects 選擇 `cubie-openapi-demo` 和 `cubie-openapi-sdk`
+瀏覽到 cubie-openapi 目錄，下方的 Projects 選擇 `cubie-sdk-android-demo` 和 `cubie-sdk-android`
 
 ![Import Projects][5]
 
-匯入後打開 `cubie-openapi-demo` 的 `res/values/strings.xml`
-
 ### 執行範例程式
 
-到 [Cubie Developer 管理介面][3] 複製中 App Details 的 App Key
+打開 `cubie-sdk-android-demo` 的 `res/values/strings.xml` 把其中 `[cubie_app_key]` 的地方用 [Cubie Developer 管理介面][6] 中 App Details 裹的 App Key 取代
 
 假設 App Key 為 `abcdefghijklmnopqrstu`
 把 `strings.xml` 的 `cubie_app_key` 和 `cubie_return_url_scheme` 改成
+
 ```
     <string name="cubie_app_key">abcdefghijklmnopqrstu</string>
     <string name="cubie_return_url_scheme">cubie-abcdefghijklmnopqrstu</string>
 ```
 
-執行 cubie-openapi-demo 看否能登入並發送訊息
+執行 cubie-sdk-android-demo 看否能登入並發送訊息
 
-## 登入
+----------
 
-### strings.xml
+## ＳＤＫ使用說明
 
-參考上方 **執行範例程式** 中設定 strings.xml 方法修改 `cubie_app_key` 和 `cubie_return_url_scheme`
+### 前置作業
 
-### AndroidManifest.xml
+參考上方 **建立一個新的 Cubie App** ，然後在 Eclipse 建立一個新的專案。由於 Cubie SDK 是 Android library project，想在新專案使用的話，必須在專案設定中指定 SDK 的位置。匯入 `cubie-sdk-android` 到 eclipse 後，右鍵點選新專案進入 properties 後，在左邊的列表選擇 Android，然後在右下方按 **Add...** 選擇 `cubie-sdk-android`。
 
-假設程式有兩個畫面，一個是起始畫面 LoginActivity，一個是登入後才能使用的 MainActivity
+![library project][7]
+
+參考上方 **執行範例程式** 中設定 `strings.xml` 的方法，修改 `cubie_app_key` 和 `cubie_return_url_scheme`，並且在 `AndroidManifest.xml` 中加入一個 SDK 和 Cubie Server 間溝通的 `ConnectCubieActivity`（已包含在 SDK 中，你的程式裹不需有這個檔案）：
 
 ```
-<activity android:name="com.example.demo.LoginActivity" >
-    <intent-filter>
-        <action android:name="android.intent.action.MAIN" />
+<activity android:name="com.cubie.openapi.sdk.ConnectCubieActivity" />
+```
 
-        <category android:name="android.intent.category.LAUNCHER" />
-    </intent-filter>
-</activity>
-<activity android:name="com.example.demo.MainActivity" >
-    <intent-filter>
-        <action android:name="android.intent.action.VIEW" />
+並且定義 app key 為 `strings.xml` 中的 `cubie_app_key`：
 
+```
+<meta-data android:name="com.cubie.openapi.sdk.AppKey" 
+           android:value="@string/cubie_app_key" />
+```
+
+如果打算要傳送可以讓對方開啟應用程式的訊息，還要在你想被開啟的 activity 中加入以下 intent filter：
+
+```
+<activity android:name="..." >
+    <intent-filter>
+        <action   android:name="android.intent.action.VIEW" />
         <category android:name="android.intent.category.DEFAULT" />
         <category android:name="android.intent.category.BROWSABLE" />
-
-        <data
-            android:host="@string/cubie_return_url_host"
-            android:scheme="@string/cubie_return_url_scheme" />
+        <data     android:host="@string/cubie_return_url_host"
+                  android:scheme="@string/cubie_return_url_scheme" />
     </intent-filter>
 </activity>
 ```
 
-最後還要定義一個 SDK 和 Cubie 間溝通的 activity（此 Activity 已包含在 SDK 中，只需在 AndroidManifest.xml 中定義，你的程式裹不需要真的有這個當案）
+### 連結 Cubie
+
+為了方便使用 Cubie SDK 的功能，Activity 可以全部繼承 `CubieBaseActivity`，這個 Activity 已經實作好和 Cubie 連結的一般邏輯，包括呼叫 `connect()` 和 `disconnect()` 來讓使用者連結或解除連結 Cubie，假如使用者已連結 Cubie 的話，`onSessionOpen()` 會被呼叫，這時候可以使用 `Cubie.getService()` 去取得使用者的資訊或傳送訊息等服務；假如使用者斷開連結的話，`onSessionClose()` 會被呼叫，此時應把使用者導引回到一個尚未連結 Cubie 時的畫面。
+
+如果不想要繼承 `CubieBaseActivity`（可能因為已繼承別的 Activity）可以參考 `CubieBaseActivity` 中如何使用 `CubieActivityHelper`。
+
+### 取得使用者的個人資訊
+參考範例：
 
 ```
-<activity android:name="com.cubie.openapi.sdk.LoginCubieActivity" />
-```
-
-### 詢問使用者是否允許存取 Cubie 資訊
-
-在 LoginActivity 中放一個登入按鈕然後在 `OnClickListener` 中呼叫以下片斷就會打開 Cubie 請求使用同意你的應用程式存取他在 Cubie 的資訊
-
-```
-Session.getSession().open(this, new SessionCallback()
-{
-    @Override
-    public void onClose()
-    {
-    }
-
-    @Override
-    public void onOpen()
-    {
-        goToMainActivity();
+Cubie.getService().requestMe(new CubieServiceCallback<CubieUser>() {
+    public void done(CubieUser user, CubieException e) { 
+        updateUI(user);
     }
 });
 ```
 
-在 `LoginActivity` 的 `onResume` 時可以使用 `Session.init(this, sessionCallback)` 直接判斷是否已經登入，如果是的話就無需呈現登入畫面，直接切換到 `MainActivity` 中；同樣地，在 `MainActivity` 的 `onResume` 時也應該呼叫 `Session.init(this, sessionCallback)`，當使用者的 Session 無效時，`onClose` 會被呼叫，此時應把使用者導引回去 `LoginActivity`。
+`CubieService.requestMe` 向 Cubie Server 要求使用者的頭像網址、暱稱等個人資訊，成功後回傳一 `CubieUser` 物件。   
 
-## 取得所用者的個人資訊
-
-使用者必需已經同意讓你的應用程式存取他的個人資訊，而且權限是有效的（權限會有使用期限，會自動更新，但太久沒用會變回無效），可以用 `Session.getSession().isOpen()` 判斷。接下來可參考以下程式片斷：
+### 取得好友名單
+參考範例：
+先準備一個 `CubieFriendList` 的成員變數
 
 ```
-CubieService.requestProfile(session, new CubieServiceHandler<CubieProfile>(CubieProfile.class)
-{
-    @Override
-    public void onException(final IOException e)
-    {
-        // display error msg
-    }
+private CubieFriendList cubieFriendList;`
+```
 
-    @Override
-    public void onFailure(final CubieServiceError cubieServiceError)
-    {
-        // display error msg
-    }
+每次呼叫 `requestFriends` 時帶入 `cubieFriendList`（一開始為 null）會向 Cubie server 要更多的好友，結果可以在 callback 中的 `updatedFriendList` 拿到，此時應把它更新到 `cubieFriendList`，下次呼叫時再次傳入。
 
-    @Override
-    public void onSuccess(final CubieProfile profile)
-    {
-        nameView.setText(profile.getNickname());
-        Picasso.with(getActivity()).load(profile.getIconUrl()).into(iconView);
+```
+Cubie.getService().requestFriends(cubieFriendList, CubieService.DEFAULT_FRIEND_LIST_PAGE_SIZE, new CubieServiceCallback<CubieFriendList>() {
+    public void done(CubieFriendList updatedFriendList, CubieException e) {
+        cubieFriendList = updatedFriendList;
+        updateUI();
     }
 });
 ```
 
-`CubieService.requestProfile` 會向 Cubie 伺服器要求使用者登入資訊，參數 `CubieServiceHandler<CubieProfile>` 負責處理伺服器回傳所收到的結果。   
-`onException` 是當發生網路連線問題時會被呼叫。   
-`onFailure` 則是連線成功但未能獲得使用者的資訊，可能是由於存取權限已變成無效。   
-`onSuccess` 是真正能拿到使用者的個人資訊時會被呼叫，此時可以把使用者的名字和頭像呈現於畫面中。   
+CubieFriendList 包含兩個成員函式：
 
-## 取得好友名單
+* `getAllFriends()`：取得當前已載入的朋友列表（`List<CubieFriend>`）
+* `hasMore()`：判斷朋友列表是否完全載入
 
-## 傳送訊息
-
-用 `Cubie.createMessageBuilder(context)` 產生一個 `CubieMessageBuilder`，每一則訊息中由以下 4 種元素所組成：
-1. 文字：用 `setText(String text)` 去設定純文字內容
-2. 圖片：用 `setImage(String url, int width, int height)` 去設定圖片的網址（必需要是能公開下載）以及寬高（單位是 dp ）
-3. 應用程式連結：用 `setAppLink(String linkText)` 設定連結文字
-4. 應用程式按鈕：用 `setAppButton(String buttonText)` 設定按鈕上的文字
-
-當使用應用程式連結或應用程式按鈕來打開你的應用程式時，可以傳入額外的參數來決定使用者點開後的行為，方式是傳入第二個參數 `ActionParams` 如下：
+### 傳送訊息
+參考範例：
 
 ```
-builder.setAppButton("open gift", new ActionParams().withExecuteParam("gift_id=1234"));
+Cubie.getService().sendMessage(receiverUid,
+                               cubieMessage,
+                               new CubieServiceCallback<CubieSendAck>() {
+    public void done(CubieSendAck sendAck, CubieException e) {...}
+});
+```
+- `receiverUid`: 欲傳送對象的 uid
+可由好友名單中選取ㄧ CubieFriend friend, 透過 `friend.getUid()` 取得 uid。
+
+- `cubieMessage`: 欲傳送的訊息
+每一則訊息是由 **文字**，**圖片**，**應用程式連結**，**應用程式按鈕** 四種元素混搭組成，建立一則 `CubieMessage` 的方法是使用 `CubieMessageBuilder` 的設定函式：
+
+    * `setText(String text)`: 設定純文字內容
+    * `setImage(String text)`: 設定圖片的網址（必需要是能公開下載）
+    * `setAppLink(String text)`: 設定連結文字
+    * `setAppLink(String text, CubieMessageActionParams actionParams)`: 設定連結文字，傳入 `actionParams` 來決定使用者點開後的行為
+    * `setAppButton(String linkText)`: 設定按鈕上的文字
+    * `setAppButton(String linkText, CubieMessageActionParams actionParams)`: 設定按鈕上的文字，傳入 `actionParams` 來決定使用者點開後的行為
+
+### 將交易記錄告知 Cubie Server
+參考範例：
+
+```
+Cubie.getService().createTransaction(request, new CubieServiceCallback<Void>() {
+    public void done(Void object, CubieException e) {...}
+});
 ```
 
-讀取的方式是在 onCreate 時或 onNewIntent 時（activity 已存在）擷取 intent 的 data
+request 為ㄧ `CubieTransactionRequest` 物件，參考如下：
 
 ```
-private void consumeExecuteParams()
-{
-    String giftId = Cubie.resolveExecuteParams(getIntent(), "gift_id");
-    if (Strings.isBlank(giftId))
-    {
-        return;
-    }
-    Toast.makeText(getActivity(), giftId, Toast.LENGTH_SHORT).show();
-}
+CubieTransactionRequest request = new CubieTransactionRequest(orderId,
+    productId,
+    itemPrice,
+    purchaseTime,
+    extraData);
 ```
 
-另外，假如收到訊息的好友使用的是 Android 而又尚未安裝你的應用程式時，可以指定點開訊息切換到 Google Play 並安裝你的程式後第一次打開時會收到額外參數，方法如下：
+如果是使用 Google Play In-app Billing 的話，呼叫時機應在使用者已完成購買，程式收到 Google Play 回傳結果的 `onActivityResult` 中，請參考 [Implementing In-app Billing 文件中 Purchasing an Item ][8] 內容敘述
 
-```
-builder.setAppButton("open gift", new ActionParams().withMarketParam("via=cubie"));
-```
-
-讀取此參數的方式是要定義一個處理 `action` 為 `com.android.vending.INSTALL_REFERRER` 的 `BroadcastReceiver`，然後用 `intent.getStringExtra("referrer")` 中的取得，詳情可參考 http://stevemiller.net/ReferrerTest/
+* `orderId`: [`INAPP_PURCHASE_DATA`][9] 的 orderId
+* `productId`: [`INAPP_PURCHASE_DATA`][10] 的 productId
+* `itemPrice`: 物品價格（可用 [getSkuDetails()][11] 取得 `price`，或寫死在程式中）
+* `purchaseTime`: [`INAPP_PURCHASE_DATA`][12] 的 `purchaseTime`
+* `extraData`: 額外資料，若無額外資料請填 null
 
 ## 常見錯誤
 
-#### 發生 CubieAppKeyNotFoundException
+### 發生 CubieAppKeyNotDefinedException
 
-請確認 `strings.xml` 有定義 `cubie_app_key`
+請確認 `AndroidManifest.xml` 有定義 
 
-#### 發生 CubieLoginActivityNotDefinedException
+```
+<meta-data android:name="com.cubie.openapi.sdk.AppKey" 
+           android:value="@string/cubie_app_key" />
+```
 
-請確認 `AndroidManifest.xml` 有定義
-
-    ```
-    <activity android:name="com.cubie.openapi.sdk.LoginCubieActivity" />
-    ```
-    
-#### 發生 CubieNoActivityHandlingReturnUrlDefinedException
+### 發生 ConnectCubieActivityNotDefinedException
 
 請確認 `AndroidManifest.xml` 有定義
 
-    ```
-    <activity android:name="com.example.demo.MainActivity" >
-        <intent-filter>
-            <action android:name="android.intent.action.VIEW" />
+```
+<activity android:name="com.cubie.openapi.sdk.ConnectCubieActivity" />
+```
     
-            <category android:name="android.intent.category.DEFAULT" />
-            <category android:name="android.intent.category.BROWSABLE" />
-    
-            <data
-                android:host="@string/cubie_return_url_host"
-                android:scheme="@string/cubie_return_url_scheme" />
-        </intent-filter>
-    </activity>
-    ```
+### cannot find app by return url
 
-#### cannot find app by return url
+請確認 `strings.xml` 的 `cubie_return_url_scheme` 設定正確，並且有 activity 去處理以下這個 intent filter
 
-請確認 `strings.xml` 的 `cubie_return_url_scheme` 設定正確
+```
+<activity android:name="..." >
+    <intent-filter>
+        <action   android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data     android:host="@string/cubie_return_url_host"
+                  android:scheme="@string/cubie_return_url_scheme" />
+    </intent-filter>
+</activity>
+```
 
-#### invalid app key
+### invalid app key
 
 請確認 `strings.xml` 的 `cubie_app_key` 設定正確
 
-#### invalid app signature
+### invalid app signature
 
 請參 **產生 App Signature** 的章節 ，另外也可在程式裹面用以下方式印出 app signature，可用來和 keytool 所產生的結果比對是否一致
 
-    ```
-    private void printSignature(final Context context) throws Exception
-    {
-        PackageInfo packageInfo = context.getPackageManager()
-            .getPackageInfo(context.getPackageName(), PackageManager.GET_SIGNATURES);
-        MessageDigest md;
-        md = MessageDigest.getInstance("SHA");
-        md.update(packageInfo.signatures[0].toByteArray());
-        final String keyHash = new String(Base64.encode(md.digest(), Base64.NO_WRAP));
-        System.out.println("signature hash:" + keyHash);
-    }
-    ```
+```
+private void printSignature(final Context context) throws Exception
+{
+    PackageInfo packageInfo = context.getPackageManager()
+        .getPackageInfo(context.getPackageName(), PackageManager.GET_SIGNATURES);
+    MessageDigest md;
+    md = MessageDigest.getInstance("SHA");
+    md.update(packageInfo.signatures[0].toByteArray());
+    final String keyHash = new String(Base64.encode(md.digest(), Base64.NO_WRAP));
+    System.out.println("signature hash:" + keyHash);
+}
+```
 
-  [1]: http://dev.cubie.com/
+
+  [1]: https://dev.cubie.com/developer/
   [2]: https://lh3.googleusercontent.com/-qRKykal36OE/U7oWRsdCQRI/AAAAAAAAAZ4/4z2doxKQDFw/s0/Screen%252520Shot%2525202014-07-07%252520at%25252011.34.39%252520AM.png "Screen Shot 2014-07-07 at 11.34.39 AM.png"
   [3]: http://dev.cubie.com/
   [4]: https://lh4.googleusercontent.com/-naK8Y_91StM/U7oT-1dSuSI/AAAAAAAAAZs/Tx2Upz7zKYA/s0/Screen%252520Shot%2525202014-07-07%252520at%25252011.27.08%252520AM.png "Screen Shot 2014-07-07 at 11.27.08 AM.png"
   [5]: https://lh5.googleusercontent.com/-JkhFsizTs3s/U7oaZsGIggI/AAAAAAAAAaE/eH-vLBlUnsI/s0/Screen%252520Shot%2525202014-07-07%252520at%25252011.55.07%252520AM.png "Screen Shot 2014-07-07 at 11.55.07 AM.png"
+  [6]: http://dev.cubie.com/
+  [7]: https://lh6.googleusercontent.com/-IS73m5sDuIQ/U-BEt3uSC4I/AAAAAAAAAas/9LrtPLnKULk/s0/Screen%252520Shot%2525202014-08-05%252520at%25252010.35.11%252520AM.png "library project"
+  [8]: http://developer.android.com/google/play/billing/billing_integrate.html#Purchase
+  [9]: http://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent
+  [10]: http://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent
+  [11]: http://developer.android.com/google/play/billing/billing_reference.html#getSkuDetails
+  [12]: http://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent

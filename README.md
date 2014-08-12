@@ -1,4 +1,1 @@
-cubie-sdk-doc
-=============
-
-Cubie Open API SDK Document
+https://dev.cubie.com/developer/
