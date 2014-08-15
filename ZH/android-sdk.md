@@ -36,17 +36,15 @@ keytool -exportcert -alias androiddebugkey -keystore /Users/developer/.android/d
 
 ### 匯入 SDK 和範例程式到 eclipse
 
-在 Eclipse 中選擇 File -> Import.. -> Android -> Existing Android Code Into Workspace
+下載最新版的 cubie-sdk-android-a.b.c.zip 和 cubie-sdk-android-demo-a.b.c.zip
 
 ![Eclipse File Import Android][4]
 
-瀏覽到 cubie-openapi 目錄，下方的 Projects 選擇 `cubie-sdk-android-demo` 和 `cubie-sdk-android`
-
-![Import Projects][5]
+解開後在 Eclipse 中選擇 File -> Import.. -> Android -> Existing Android Code Into Workspace 匯入 `cubie-sdk-android-demo` 和 `cubie-sdk-android`
 
 ### 執行範例程式
 
-打開 `cubie-sdk-android-demo` 的 `res/values/strings.xml` 把其中 `[cubie_app_key]` 的地方用 [Cubie Developer 管理介面][6] 中 App Details 裹的 App Key 取代
+打開 `cubie-sdk-android-demo` 的 `res/values/strings.xml` 把其中 `[cubie_app_key]` 的地方用 [Cubie Developer 管理介面][5] 中 App Details 裹的 App Key 取代
 
 假設 App Key 為 `abcdefghijklmnopqrstu`
 把 `strings.xml` 的 `cubie_app_key` 和 `cubie_return_url_scheme` 改成
@@ -66,7 +64,7 @@ keytool -exportcert -alias androiddebugkey -keystore /Users/developer/.android/d
 
 參考上方 **建立一個新的 Cubie App** ，然後在 Eclipse 建立一個新的專案。由於 Cubie SDK 是 Android library project，想在新專案使用的話，必須在專案設定中指定 SDK 的位置。匯入 `cubie-sdk-android` 到 eclipse 後，右鍵點選新專案進入 properties 後，在左邊的列表選擇 Android，然後在右下方按 **Add...** 選擇 `cubie-sdk-android`。
 
-![library project][7]
+![library project][6]
 
 參考上方 **執行範例程式** 中設定 `strings.xml` 的方法，修改 `cubie_app_key` 和 `cubie_return_url_scheme`，並且在 `AndroidManifest.xml` 中加入一個 SDK 和 Cubie Server 間溝通的 `ConnectCubieActivity`（已包含在 SDK 中，你的程式裹不需有這個檔案）：
 
@@ -125,18 +123,18 @@ private CubieFriendList cubieFriendList;`
 每次呼叫 `requestFriends` 時帶入 `cubieFriendList`（一開始為 null）會向 Cubie server 要更多的好友，結果可以在 callback 中的 `updatedFriendList` 拿到，此時應把它更新到 `cubieFriendList`，下次呼叫時再次傳入。
 
 ```
-Cubie.getService().requestFriends(cubieFriendList, CubieService.DEFAULT_FRIEND_LIST_PAGE_SIZE, new CubieServiceCallback<CubieFriendList>() {
+Cubie.getService().requestFriends(cubieFriendList, pageSize, new CubieServiceCallback<CubieFriendList>() {
     public void done(CubieFriendList updatedFriendList, CubieException e) {
         cubieFriendList = updatedFriendList;
         updateUI();
     }
 });
 ```
+* pageSize表示向Cubie Server要求的朋友個數
 
-CubieFriendList 包含兩個成員函式：
-
-* `getAllFriends()`：取得當前已載入的朋友列表（`List<CubieFriend>`）
-* `hasMore()`：判斷朋友列表是否完全載入
+* CubieFriendList 包含兩個成員函式：
+    * `getAllFriends()`：取得當前已載入的朋友列表（`List<CubieFriend>`）
+    * `hasMore()`：判斷朋友列表是否完全載入
 
 ### 傳送訊息
 參考範例：
@@ -154,12 +152,21 @@ Cubie.getService().sendMessage(receiverUid,
 - `cubieMessage`: 欲傳送的訊息
 每一則訊息是由 **文字**，**圖片**，**應用程式連結**，**應用程式按鈕** 四種元素混搭組成，建立一則 `CubieMessage` 的方法是使用 `CubieMessageBuilder` 的設定函式：
 
+    * `setNotification(String notification)`: 設定提示訊息，**請注意此欄位必填！** 請參考下方圖片
     * `setText(String text)`: 設定純文字內容
     * `setImage(String text)`: 設定圖片的網址（必需要是能公開下載）
     * `setAppLink(String text)`: 設定連結文字
     * `setAppLink(String text, CubieMessageActionParams actionParams)`: 設定連結文字，傳入 `actionParams` 來決定使用者點開後的行為
     * `setAppButton(String linkText)`: 設定按鈕上的文字
     * `setAppButton(String linkText, CubieMessageActionParams actionParams)`: 設定按鈕上的文字，傳入 `actionParams` 來決定使用者點開後的行為
+
+Notification 出現的地方包括 status bar, notification panel, 還有聊天室列表中
+
+![notification on status bar][7]
+
+![notification panel][8]
+
+![chat room last text][9]
 
 ### 將交易記錄告知 Cubie Server
 參考範例：
@@ -180,12 +187,12 @@ CubieTransactionRequest request = new CubieTransactionRequest(orderId,
     extraData);
 ```
 
-如果是使用 Google Play In-app Billing 的話，呼叫時機應在使用者已完成購買，程式收到 Google Play 回傳結果的 `onActivityResult` 中，請參考 [Implementing In-app Billing 文件中 Purchasing an Item ][8] 內容敘述
+如果是使用 Google Play In-app Billing 的話，呼叫時機應在使用者已完成購買，程式收到 Google Play 回傳結果的 `onActivityResult` 中，請參考 [Implementing In-app Billing 文件中 Purchasing an Item ][10] 內容敘述
 
-* `orderId`: [`INAPP_PURCHASE_DATA`][9] 的 orderId
-* `productId`: [`INAPP_PURCHASE_DATA`][10] 的 productId
-* `itemPrice`: 物品價格（可用 [getSkuDetails()][11] 取得 `price`，或寫死在程式中）
-* `purchaseTime`: [`INAPP_PURCHASE_DATA`][12] 的 `purchaseTime`
+* `orderId`: [`INAPP_PURCHASE_DATA`][11] 的 orderId
+* `productId`: [`INAPP_PURCHASE_DATA`][12] 的 productId
+* `itemPrice`: 物品價格（可用 [getSkuDetails()][13] 取得 `price`，或寫死在程式中）
+* `purchaseTime`: [`INAPP_PURCHASE_DATA`][14] 的 `purchaseTime`
 * `extraData`: 額外資料，若無額外資料請填 null
 
 ## 常見錯誤
@@ -249,11 +256,13 @@ private void printSignature(final Context context) throws Exception
   [2]: https://lh3.googleusercontent.com/-qRKykal36OE/U7oWRsdCQRI/AAAAAAAAAZ4/4z2doxKQDFw/s0/Screen%252520Shot%2525202014-07-07%252520at%25252011.34.39%252520AM.png "Screen Shot 2014-07-07 at 11.34.39 AM.png"
   [3]: http://dev.cubie.com/
   [4]: https://lh4.googleusercontent.com/-naK8Y_91StM/U7oT-1dSuSI/AAAAAAAAAZs/Tx2Upz7zKYA/s0/Screen%252520Shot%2525202014-07-07%252520at%25252011.27.08%252520AM.png "Screen Shot 2014-07-07 at 11.27.08 AM.png"
-  [5]: https://lh5.googleusercontent.com/-JkhFsizTs3s/U7oaZsGIggI/AAAAAAAAAaE/eH-vLBlUnsI/s0/Screen%252520Shot%2525202014-07-07%252520at%25252011.55.07%252520AM.png "Screen Shot 2014-07-07 at 11.55.07 AM.png"
-  [6]: http://dev.cubie.com/
-  [7]: https://lh6.googleusercontent.com/-IS73m5sDuIQ/U-BEt3uSC4I/AAAAAAAAAas/9LrtPLnKULk/s0/Screen%252520Shot%2525202014-08-05%252520at%25252010.35.11%252520AM.png "library project"
-  [8]: http://developer.android.com/google/play/billing/billing_integrate.html#Purchase
-  [9]: http://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent
-  [10]: http://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent
-  [11]: http://developer.android.com/google/play/billing/billing_reference.html#getSkuDetails
+  [5]: http://dev.cubie.com/
+  [6]: https://lh6.googleusercontent.com/-IS73m5sDuIQ/U-BEt3uSC4I/AAAAAAAAAas/9LrtPLnKULk/s0/Screen%252520Shot%2525202014-08-05%252520at%25252010.35.11%252520AM.png "library project"
+  [7]: https://lh4.googleusercontent.com/-1vYacclNhlk/U-3IRookA8I/AAAAAAAAAbo/94-VsuX3qvc/s0/device-2014-08-15-163431.png "notification on status bar"
+  [8]: https://lh4.googleusercontent.com/-Fl0GFlEP1VQ/U-3IXSGFJSI/AAAAAAAAAbw/3swZynOa4j8/s0/device-2014-08-15-163457.png "notification panel"
+  [9]: https://lh5.googleusercontent.com/-gERUtslPBCY/U-3IdmjRgJI/AAAAAAAAAb4/c2auKYNczXk/s0/device-2014-08-15-163512.png "chat room last text"
+  [10]: http://developer.android.com/google/play/billing/billing_integrate.html#Purchase
+  [11]: http://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent
   [12]: http://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent
+  [13]: http://developer.android.com/google/play/billing/billing_reference.html#getSkuDetails
+  [14]: http://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent
