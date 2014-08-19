@@ -99,6 +99,17 @@ keytool -exportcert -alias androiddebugkey -keystore /Users/developer/.android/d
 
 如果不想要繼承 `CubieBaseActivity`（可能因為已繼承別的 Activity）可以參考 `CubieBaseActivity` 中如何使用 `CubieActivityHelper`。
 
+Cubie SDK 有提供連結 Cubie 時使用的按鈕，可以直接在 layout xml 中使用
+
+```
+<com.cubie.openapi.sdk.CubieConnectButton
+        android:id="@+id/connectButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+```
+
+![connect with cubie button][7]
+
 ### 取得使用者的個人資訊
 參考範例：
 
@@ -160,13 +171,17 @@ Cubie.getService().sendMessage(receiverUid,
     * `setAppButton(String linkText)`: 設定按鈕上的文字
     * `setAppButton(String linkText, CubieMessageActionParams actionParams)`: 設定按鈕上的文字，傳入 `actionParams` 來決定使用者點開後的行為
 
+CubieMessage 的四個元素如下圖：
+
+![CubieMessage][8]
+
 Notification 出現的地方包括 status bar, notification panel, 還有聊天室列表中
 
-![notification on status bar][7]
+![notification on status bar][9]
 
-![notification panel][8]
+![notification panel][10]
 
-![chat room last text][9]
+![chat room last text][11]
 
 ### 將交易記錄告知 Cubie Server
 參考範例：
@@ -187,12 +202,12 @@ CubieTransactionRequest request = new CubieTransactionRequest(orderId,
     extraData);
 ```
 
-如果是使用 Google Play In-app Billing 的話，呼叫時機應在使用者已完成購買，程式收到 Google Play 回傳結果的 `onActivityResult` 中，請參考 [Implementing In-app Billing 文件中 Purchasing an Item ][10] 內容敘述
+如果是使用 Google Play In-app Billing 的話，呼叫時機應在使用者已完成購買，程式收到 Google Play 回傳結果的 `onActivityResult` 中，請參考 [Implementing In-app Billing 文件中 Purchasing an Item ][12] 內容敘述
 
-* `orderId`: [`INAPP_PURCHASE_DATA`][11] 的 orderId
-* `productId`: [`INAPP_PURCHASE_DATA`][12] 的 productId
-* `itemPrice`: 物品價格（可用 [getSkuDetails()][13] 取得 `price`，或寫死在程式中）
-* `purchaseTime`: [`INAPP_PURCHASE_DATA`][14] 的 `purchaseTime`
+* `orderId`: [`INAPP_PURCHASE_DATA`][13] 的 orderId
+* `productId`: [`INAPP_PURCHASE_DATA`][14] 的 productId
+* `itemPrice`: 物品價格（可用 [getSkuDetails()][15] 取得 `price`，或寫死在程式中）
+* `purchaseTime`: [`INAPP_PURCHASE_DATA`][16] 的 `purchaseTime`
 * `extraData`: 額外資料，若無額外資料請填 null
 
 ## 常見錯誤
@@ -238,6 +253,10 @@ CubieTransactionRequest request = new CubieTransactionRequest(orderId,
 
 請參 **產生 App Signature** 的章節 ，另外也可在程式裹面用以下方式印出 app signature，可用來和 keytool 所產生的結果比對是否一致
 
+### 呼叫 CubieService.sendMessage 時發生 CubieMessageEmptyException
+
+CubieMessage 的 **文字**，**圖片**，**應用程式連結**，**應用程式按鈕** 不能全部為空，另外 `notification` **為必填欄位**。
+
 ```
 private void printSignature(final Context context) throws Exception
 {
@@ -258,11 +277,13 @@ private void printSignature(final Context context) throws Exception
   [4]: https://lh4.googleusercontent.com/-naK8Y_91StM/U7oT-1dSuSI/AAAAAAAAAZs/Tx2Upz7zKYA/s0/Screen%252520Shot%2525202014-07-07%252520at%25252011.27.08%252520AM.png "Screen Shot 2014-07-07 at 11.27.08 AM.png"
   [5]: http://dev.cubie.com/
   [6]: https://lh6.googleusercontent.com/-IS73m5sDuIQ/U-BEt3uSC4I/AAAAAAAAAas/9LrtPLnKULk/s0/Screen%252520Shot%2525202014-08-05%252520at%25252010.35.11%252520AM.png "library project"
-  [7]: https://lh4.googleusercontent.com/-1vYacclNhlk/U-3IRookA8I/AAAAAAAAAbo/94-VsuX3qvc/s0/device-2014-08-15-163431.png "notification on status bar"
-  [8]: https://lh4.googleusercontent.com/-Fl0GFlEP1VQ/U-3IXSGFJSI/AAAAAAAAAbw/3swZynOa4j8/s0/device-2014-08-15-163457.png "notification panel"
-  [9]: https://lh5.googleusercontent.com/-gERUtslPBCY/U-3IdmjRgJI/AAAAAAAAAb4/c2auKYNczXk/s0/device-2014-08-15-163512.png "chat room last text"
-  [10]: http://developer.android.com/google/play/billing/billing_integrate.html#Purchase
-  [11]: http://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent
-  [12]: http://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent
-  [13]: http://developer.android.com/google/play/billing/billing_reference.html#getSkuDetails
+  [7]: https://lh4.googleusercontent.com/-QohHo4Dc9_A/U_Fx3Qv1DtI/AAAAAAAAAcw/3GYAaY48zSk/s0/device-2014-08-18-112338.png "connect with cubie button"
+  [8]: https://lh6.googleusercontent.com/-UAeYJoO3pOE/U_FrNq5GF9I/AAAAAAAAAcI/OTXm5K72kAM/s0/device-2014-08-18-105302.png "CubieMessage"
+  [9]: https://lh4.googleusercontent.com/-1vYacclNhlk/U-3IRookA8I/AAAAAAAAAbo/94-VsuX3qvc/s0/device-2014-08-15-163431.png "notification on status bar"
+  [10]: https://lh4.googleusercontent.com/-Fl0GFlEP1VQ/U-3IXSGFJSI/AAAAAAAAAbw/3swZynOa4j8/s0/device-2014-08-15-163457.png "notification panel"
+  [11]: https://lh5.googleusercontent.com/-gERUtslPBCY/U-3IdmjRgJI/AAAAAAAAAb4/c2auKYNczXk/s0/device-2014-08-15-163512.png "chat room last text"
+  [12]: http://developer.android.com/google/play/billing/billing_integrate.html#Purchase
+  [13]: http://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent
   [14]: http://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent
+  [15]: http://developer.android.com/google/play/billing/billing_reference.html#getSkuDetails
+  [16]: http://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent
