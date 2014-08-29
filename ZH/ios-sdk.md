@@ -1,5 +1,7 @@
 # Cubie SDK for iOS
 
+## **請注意目前 Cubie SDK 只能在 iOS device 上執行，暫不能使用模擬器開發**
+
 ## 如何執行範例程式 
 
 ### 建立一個新的 Cubie App
